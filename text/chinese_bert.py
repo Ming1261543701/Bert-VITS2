@@ -1,13 +1,18 @@
-import torch
 import sys
-from transformers import AutoTokenizer, AutoModelForMaskedLM
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
+import torch
+from transformers import AutoModelForMaskedLM, AutoTokenizer
+
+from config import config
+
+LOCAL_PATH = "./bert/chinese-roberta-wwm-ext-large"
+
+tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
 
-def get_bert_feature(text, word2ph, device=None):
+def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()
@@ -17,9 +22,7 @@ def get_bert_feature(text, word2ph, device=None):
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/chinese-roberta-wwm-ext-large"
-        ).to(device)
+        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
@@ -40,8 +43,6 @@ def get_bert_feature(text, word2ph, device=None):
 
 
 if __name__ == "__main__":
-    import torch
-
     word_level_feature = torch.rand(38, 1024)  # 12个词,每个词1024维特征
     word2phone = [
         1,
